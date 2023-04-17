@@ -28,12 +28,17 @@ void init_i2c()
 extern "C" void app_main(void)
 {
 	esp_log_level_set("*", ESP_LOG_VERBOSE);
-	ESP_LOGI(TAG, "H E N L O B E N C, Wait");
+	ESP_LOGI(TAG, "H E N L O B E N C");
 	vTaskDelay(pdMS_TO_TICKS(1000));
 
 	init_i2c();
-
+	ESP_LOGI(TAG, "I2C inited");
 	PCF8574 comm(I2C_NUM_0);
-
+	ESP_LOGI(TAG, "PCF8574 constr");
 	HD44780<PCF8574> disp(comm, 4, 20);
+	ESP_LOGI(TAG, "HD44780 constr");
+
+	disp.write_string("Now thats a pretty really longass string no cap fr");
+
+	ESP_LOGI(TAG, "Written");
 }

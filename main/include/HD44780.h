@@ -14,11 +14,31 @@ public:
 	display_function_t function;
 	lcd_backlight_t backlight;
 	const lcd_dims_t screen_size;
+
+private:
 	lcd_dims_t cursor_pos;
 
-	HD44780(Comm &c, lcd_dims_t d) : com(c), screen_size(d)
+public:
+	HD44780(Comm &c, lcd_dims_t d) : com(c), entry(), control(), function(), backlight(), screen_size(d), cursor_pos(0, 0)
 	{
-		com.init();
+		function.mode = com.init();
+		function.lines = LCD_2LINE;
+		function.dots = LCD_5x8DOTS;
+		update_function();
+
+		control.display = LCD_DISPLAY_ON;
+		control.cursor = LCD_CURSOR_OFF;
+		control.blink = LCD_BLINK_OFF;
+		update_control();
+
+		clear();
+
+		entry.entry = LCD_ENTRY_INCREMENT;
+		entry.shift = LCD_DISPLAY_NOSHIFT;
+		update_entry();
+
+		backlight = LCD_BACKLIGHT_ON;
+		home();
 	}
 	HD44780(Comm &c, uint8_t h, uint8_t w) : HD44780(c, lcd_dims_t(h, w)) {}
 	~HD44780() {}
@@ -127,13 +147,45 @@ public:
 	}
 	void write_char(char c)
 	{
-		com.write(true, c);
-		if (entry.entry)
+		com.write(true, backlight, c);
+		if (entry.entry == LCD_ENTRY_INCREMENT)
 			increment_internal_cursor();
 		else
 			decrement_internal_cursor();
 	}
 
+	void clear()
+	{
+		com.write(false, backlight, LCD_CLEAR_DISPLAY);
+		cursor_pos = {0, 0};
+		entry.entry = LCD_ENTRY_INCREMENT; // Also sets I/D bit to 1 (increment mode)
+	}
+
+	void home()
+	{
+		com.write(false, backlight, LCD_CURSOR_HOME);
+		vTaskDelay(pdMS_TO_TICKS(2)); // 1.52ms execution time
+		cursor_pos = {0, 0};
+	}
+
+	void move_cursor(lcd_dims_t p)
+	{
+		constexpr uint8_t row_offsets[] = {0x00, 0x40, 0x14, 0x54, 0x28, 0x68}; // 3rd line is a stretch, but it makes sense. 4th would not fit.
+
+		cursor_pos = p;
+		if (p.x >= screen_size.x || p.y >= screen_size.y)
+			return;
+
+		uint8_t idx = row_offsets[p.y] + p.x;
+
+		com.write(false, backlight, LCD_SET_DDR_ADDR | idx);
+	}
+	void move_cursor(uint8_t y, uint8_t x)
+	{
+		move_cursor(lcd_dims_t(y, x));
+	}
+
+private:
 	void increment_internal_cursor()
 	{
 		cursor_pos.x++;
@@ -161,22 +213,5 @@ public:
 
 			move_cursor(cursor_pos);
 		}
-	}
-
-	void move_cursor(lcd_dims_t p)
-	{
-		constexpr uint8_t row_offsets[] = {0x00, 0x40, 0x14, 0x54, 0x28, 0x68}; // 3rd line is a stretch, but it makes sense. 4th would not fit.
-
-		cursor_pos = p;
-		if (p.x >= screen_size.x || p.y >= screen_size.y)
-			return;
-
-		uint8_t idx = row_offsets[p.y] + p.x;
-
-		com.write(false, LCD_SET_DDR_ADDR | idx);
-	}
-	void move_cursor(uint8_t y, uint8_t x)
-	{
-		move_cursor(lcd_dims_t(y, x));
 	}
 };

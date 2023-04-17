@@ -24,7 +24,7 @@ public:
 	// Interfaces for HD... init, pins
 
 	// Initialise the LCD controller by instruction for 4-bit interface (obviously)
-	void init()
+	lcd_mode_t init()
 	{
 		// First part of reset sequence
 		write_nibble(LCD_SET_FUNCTION | LCD_8BIT);
@@ -40,23 +40,29 @@ public:
 		// Activate 4-bit mode
 		write_nibble(LCD_SET_FUNCTION | LCD_4BIT);
 		ets_delay_us(80); // 40 us delay (min)
+
+		return LCD_4BIT;
 	}
 
 	void write(bool RS, bool BL, uint8_t data)
 	{
 		uint8_t mode = (RS) | (BL ? LCD_BACKLIGHT_ON : LCD_BACKLIGHT_OFF);
 
-		uint8_t datah = data & 0xF0;
-		uint8_t datal = (data << 4) & 0xF0;
+		uint8_t datah = data;
+		uint8_t datal = data << 4;
 
 		write_nibble(datah | mode);
 		write_nibble(datal | mode);
+
+		//ets_delay_us(40); // 37us + 4us execution time
 	}
 
 private:
 	// writes and clocks-in the data
 	void write_nibble(uint8_t data)
 	{
+		data = data & 0xF0;
+
 		send_i2c(data, false);
 		ets_delay_us(1000); // to stabilize pins (why so long gdammit)
 
@@ -64,7 +70,7 @@ private:
 		ets_delay_us(1); // enable pulse must be >450ns
 
 		send_i2c(data, false);
-		ets_delay_us(42); // 37us + 4us execution time
+		ets_delay_us(40); // 37us + 4us execution time
 	}
 
 	void send_i2c(uint8_t data, bool CE)
