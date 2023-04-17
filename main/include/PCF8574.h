@@ -14,62 +14,55 @@ public:
 	}
 	~PCF8574() = default;
 
-	// Interface for HD...
-	esp_err_t setup_pins(bool RS, bool RW, bool CE, bool BL, uint8_t data)
+	// Interfaces for HD... init, pins
+
+	// Initialise the LCD controller by instruction for 4-bit interface (obviously)
+	void init()
 	{
-		uint8_t datah = (data & 0xF0) | mode | BL;
+		// First part of reset sequence
+		lcd_write_nibble(handle, LCD_FUNCTION_SET | LCD_8BIT_MODE, 0);
+		vTaskDelay(pdMS_TO_TICKS(10)); // 4.1 ms delay (min)
 
-		(data << 4) & 0xF0
+		// second part of reset sequence
+		lcd_write_nibble(handle, LCD_FUNCTION_SET | LCD_8BIT_MODE, 0);
+		ets_delay_us(200); // 100 us delay (min)
 
-			esp_err_t ret;
+		// Third time's a charm
+		lcd_write_nibble(handle, LCD_FUNCTION_SET | LCD_8BIT_MODE, 0);
 
-		ESP_GOTO_ON_ERROR(
-			lcd_write_nibble(, data & 0xF0, mode),
-			err, TAG, "Error with lcd_write_nibble()");
+		// Activate 4-bit mode
+		lcd_write_nibble(handle, LCD_FUNCTION_SET | LCD_4BIT_MODE, 0);
 
-		ESP_GOTO_ON_ERROR(
-			lcd_write_nibble(handle, (data << 4) & 0xF0, mode),
-			err, TAG, "Error with lcd_write_nibble()");
-
-		return ESP_OK;
-	err:
-		ESP_LOGE(TAG, "lcd_write_byte:%s", esp_err_to_name(ret));
-		return ret;
+		ets_delay_us(80); // 40 us delay (min)
 	}
 
-	static esp_err_t lcd_write_nibble(uint8_t nibble, uint8_t mode)
+	// http://1.bp.blogspot.com/-3rGvx1WiEHQ/VRJQyqSIqTI/AAAAAAAASAc/Gs9DN97CM8Q/s1600/PCF8574-LCD-HD44780-schemat.png
+	void pins(bool RS, bool BL, uint8_t data)
 	{
-		esp_err_t ret = ESP_OK;
-		uint8_t data = 0;
+		uint8_t mode = (RS << 0) | (BL << 3);
 
-		if (handle->backlight)
-		{
-			data = (nibble & 0xF0) | mode | LCD_BACKLIGHT_CONTROL_ON;
-		}
-		else
-		{
-			data = (nibble & 0xF0) | mode | LCD_BACKLIGHT_CONTROL_OFF;
-		}
+		uint8_t datah = data & 0xF0;
+		uint8_t datal = (data << 4) & 0xF0;
 
-		ESP_GOTO_ON_ERROR(
-			send_byte(data),
-			err, TAG, "Error with lcd_i2c_write()");
-
-		ets_delay_us(LCD_PRE_PULSE_DELAY_US); // Need a decent delay here, else display won't work
-
-		// Clock the data into the LCD
-		ESP_GOTO_ON_ERROR(
-			lcd_pulse_enable(handle, data),
-			err, TAG, "Error in lcd_pulse_enable()");
-
-		return ESP_OK;
-
-	err:
-		ESP_LOGE(TAG, "lcd_write_nibble:%s", esp_err_to_name(ret));
-		return ret;
+		write_nibble(datah, mode);
+		write_nibble(datal, mode);
 	}
 
-	esp_err_t send_byte(uint8_t byte)
+private:
+	// writes and clocks-in the data
+	void write_nibble(uint8_t data, uint8_t mode)
+	{
+		send_i2c(data, mode, false);
+		ets_delay_us(1000); // to stabilize pins (why so long gdammit)
+
+		send_i2c(data, mode, true);
+		ets_delay_us(1); // enable pulse must be >450ns
+
+		send_i2c(data, mode, false);
+		ets_delay_us(42); // 37us + 4us execution time
+	}
+
+	void send_i2c(uint8_t data, uint8_t mode, bool CE)
 	{
 		esp_err_t ret = ESP_OK;
 		i2c_cmd_handle_t cmdh = i2c_cmd_link_create();
@@ -95,12 +88,10 @@ public:
 			err, TAG, "Error with i2c_master_cmd_begin()");
 
 		i2c_cmd_link_delete(cmdh);
-
-		return ESP_OK;
+		return;
 
 	err:
 		ESP_LOGE(TAG, "Error in ::send_byte(): %s", esp_err_to_name(ret));
-		return ret;
 	}
 }
 
