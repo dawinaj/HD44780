@@ -1,6 +1,9 @@
 #pragma once
 
+#include <esp_check.h>
+
 #include <driver/i2c.h>
+#include <rom/ets_sys.h>
 
 #include "HD44780_defines.h"
 
@@ -24,47 +27,47 @@ public:
 	void init()
 	{
 		// First part of reset sequence
-		write_nibble(LCD_SET_FUNCTION | LCD_8BIT, 0);
+		write_nibble(LCD_SET_FUNCTION | LCD_8BIT);
 		vTaskDelay(pdMS_TO_TICKS(10)); // 4.1 ms delay (min)
 
 		// second part of reset sequence
-		write_nibble(LCD_SET_FUNCTION | LCD_8BIT, 0);
+		write_nibble(LCD_SET_FUNCTION | LCD_8BIT);
 		ets_delay_us(200); // 100 us delay (min)
 
 		// Third time's a charm
-		write_nibble(LCD_SET_FUNCTION | LCD_8BIT, 0);
+		write_nibble(LCD_SET_FUNCTION | LCD_8BIT);
 
 		// Activate 4-bit mode
-		write_nibble(LCD_SET_FUNCTION | LCD_4BIT, 0);
+		write_nibble(LCD_SET_FUNCTION | LCD_4BIT);
 		ets_delay_us(80); // 40 us delay (min)
 	}
 
 	void write(bool RS, bool BL, uint8_t data)
 	{
-		uint8_t mode = (RS << 0) | (BL << 3);
+		uint8_t mode = (RS) | (BL ? LCD_BACKLIGHT_ON : LCD_BACKLIGHT_OFF);
 
 		uint8_t datah = data & 0xF0;
 		uint8_t datal = (data << 4) & 0xF0;
 
-		write_nibble(datah, mode);
-		write_nibble(datal, mode);
+		write_nibble(datah | mode);
+		write_nibble(datal | mode);
 	}
 
 private:
 	// writes and clocks-in the data
-	void write_nibble(uint8_t data, uint8_t mode)
+	void write_nibble(uint8_t data)
 	{
-		send_i2c(data, mode, false);
+		send_i2c(data, false);
 		ets_delay_us(1000); // to stabilize pins (why so long gdammit)
 
-		send_i2c(data, mode, true);
+		send_i2c(data, true);
 		ets_delay_us(1); // enable pulse must be >450ns
 
-		send_i2c(data, mode, false);
+		send_i2c(data, false);
 		ets_delay_us(42); // 37us + 4us execution time
 	}
 
-	void send_i2c(uint8_t data, uint8_t mode, bool CE)
+	void send_i2c(uint8_t data, bool CE)
 	{
 		esp_err_t ret = ESP_OK;
 		i2c_cmd_handle_t cmdh = i2c_cmd_link_create();
@@ -78,7 +81,7 @@ private:
 			err, TAG, "Error with i2c_master_write_byte() #1");
 
 		ESP_GOTO_ON_ERROR(
-			i2c_master_write_byte(cmdh, byte, true),
+			i2c_master_write_byte(cmdh, data, true),
 			err, TAG, "Error with i2c_master_write_byte() #2");
 
 		ESP_GOTO_ON_ERROR(
@@ -95,6 +98,6 @@ private:
 	err:
 		ESP_LOGE(TAG, "Error in ::send_byte(): %s", esp_err_to_name(ret));
 	}
-}
+};
 
 #undef TAG

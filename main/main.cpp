@@ -1,4 +1,3 @@
-#include "settings.h"
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
@@ -36,7 +35,5 @@ extern "C" void app_main(void)
 
 	PCF8574 comm(I2C_NUM_0);
 
-	HD44780<PCF8574> disp(comm);
-
-	
+	HD44780<PCF8574> disp(comm, 4, 20);
 }

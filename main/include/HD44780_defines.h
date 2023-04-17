@@ -18,18 +18,49 @@
 // RW - not used (only write)
 // E - used internally for clocking data in
 
+struct lcd_config_t
+{
+	uint8_t columns;		  /*!< Number of columns. Must be populated prior to calling lcd_init(). */
+	uint8_t rows;			  /*!< Number of rows. Must be populated prior to calling lcd_init(). */
+	uint8_t display_function; /*!< Current state of display function flag. Must be populated prior to calling lcd_init(). */
+	uint8_t display_control;  /*!< Current state of display control flag. Must be populated prior to calling lcd_init(). */
+	uint8_t display_mode;	  /*!< Current state of display mode flag. Must be populated prior to calling lcd_init(). */
+	uint8_t backlight;		  /*!< Current state of backlight. */
+};
+
+struct lcd_dims_t
+{
+	uint8_t y;
+	uint8_t x;
+};
+
 enum lcd_command_t : uint8_t
 {
-	LCD_NOTHING /*      */ = 0b00000000,
+	LCD_DO_NOTHING /*   */ = 0b00000000,
 	LCD_CLEAR_DISPLAY /**/ = 0b00000001,
 	LCD_CURSOR_HOME /*  */ = 0b00000010,
-	LCD_ENTRY_SET /*    */ = 0b00000100,
+	LCD_SET_ENTRY /*    */ = 0b00000100,
 	LCD_SET_CONTROL /*  */ = 0b00001000,
 	LCD_SET_MODE /*     */ = 0b00010000,
 	LCD_SET_FUNCTION /* */ = 0b00100000,
 	LCD_SET_CGR_ADDR /* */ = 0b01000000,
 	LCD_SET_DDR_ADDR /* */ = 0b10000000,
 };
+
+// Refer Datasheet -> Table 6 for details
+
+// display entry {
+enum lcd_entry_t : uint8_t
+{
+	LCD_ENTRY_DECREMENT = 0b00000000, // Decrements DDRAM and shifts cursor left
+	LCD_ENTRY_INCREMENT = 0b00000010, // Increments DDRAM and shifts cursor right
+};
+enum lcd_shift_t : uint8_t
+{
+	LCD_DISPLAY_NOSHIFT = 0b00000000, // Display does not shift
+	LCD_DISPLAY_SHIFT = 0b00000001,	  // Shifts entire display. Right if decrement. Left if increment
+};
+// }
 
 // display control {
 enum lcd_display_t : uint8_t
@@ -51,7 +82,7 @@ enum lcd_blink_t : uint8_t
 };
 // }
 
-// display mode {
+// display shift {
 enum lcd_move_t : uint8_t
 {
 	LCD_CURSOR_MOVE = 0b00000000,  // Move Cursor
@@ -84,6 +115,22 @@ enum lcd_dots_t : uint8_t
 	LCD_5x10DOTS = 0b00000100, // 1 << 2
 };
 // }
+
+enum lcd_backlight_t : uint8_t
+{
+	LCD_BACKLIGHT_OFF = 0b00000000,
+	LCD_BACKLIGHT_ON = 0b00001000, // 1 << 3
+};
+
+struct display_entry_t
+{
+	lcd_entry_t entry;
+	lcd_shift_t shift;
+	operator uint8_t() const
+	{
+		return entry | shift;
+	}
+};
 
 struct display_control_t
 {
