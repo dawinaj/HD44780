@@ -20,7 +20,9 @@
 		"*.tcc": "cpp",
 		"array": "cpp",
 		"string": "cpp",
-		"string_view": "cpp"
+		"string_view": "cpp",
+		"functional": "cpp",
+		"ostream": "cpp"
 	},
 	"idf.flashType": "UART"
 }

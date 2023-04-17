@@ -1,5 +1,9 @@
 #pragma once
 
+#include <driver/i2c.h>
+
+#include "HD44780_defines.h"
+
 #define TAG "PCF8574"
 
 // Class for handling connection to the expander
@@ -9,7 +13,7 @@ class PCF8574
 	uint8_t HEAD;
 
 public:
-	PCF8574(i2c_port_t port, uint8_t address) : PORT(port), HEAD((address << 1) | I2C_MASTER_WRITE)
+	PCF8574(i2c_port_t port, uint8_t address = 0x3F) : PORT(port), HEAD((address << 1) | I2C_MASTER_WRITE)
 	{
 	}
 	~PCF8574() = default;
@@ -20,24 +24,22 @@ public:
 	void init()
 	{
 		// First part of reset sequence
-		lcd_write_nibble(handle, LCD_FUNCTION_SET | LCD_8BIT_MODE, 0);
+		write_nibble(LCD_SET_FUNCTION | LCD_8BIT, 0);
 		vTaskDelay(pdMS_TO_TICKS(10)); // 4.1 ms delay (min)
 
 		// second part of reset sequence
-		lcd_write_nibble(handle, LCD_FUNCTION_SET | LCD_8BIT_MODE, 0);
+		write_nibble(LCD_SET_FUNCTION | LCD_8BIT, 0);
 		ets_delay_us(200); // 100 us delay (min)
 
 		// Third time's a charm
-		lcd_write_nibble(handle, LCD_FUNCTION_SET | LCD_8BIT_MODE, 0);
+		write_nibble(LCD_SET_FUNCTION | LCD_8BIT, 0);
 
 		// Activate 4-bit mode
-		lcd_write_nibble(handle, LCD_FUNCTION_SET | LCD_4BIT_MODE, 0);
-
+		write_nibble(LCD_SET_FUNCTION | LCD_4BIT, 0);
 		ets_delay_us(80); // 40 us delay (min)
 	}
 
-	// http://1.bp.blogspot.com/-3rGvx1WiEHQ/VRJQyqSIqTI/AAAAAAAASAc/Gs9DN97CM8Q/s1600/PCF8574-LCD-HD44780-schemat.png
-	void pins(bool RS, bool BL, uint8_t data)
+	void write(bool RS, bool BL, uint8_t data)
 	{
 		uint8_t mode = (RS << 0) | (BL << 3);
 
