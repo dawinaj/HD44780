@@ -3,6 +3,6 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := Blok_IO_AC
+PROJECT_NAME := HD44780
 
 include $(IDF_PATH)/make/project.mk

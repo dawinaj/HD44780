@@ -6,7 +6,26 @@
 #include "PCF8574.h"
 #include "HD44780.h"
 
+#include "lcd.h"
+
 static const char *TAG = "LCD_Test";
+
+//
+
+lcd_handle_t lcd_handle = LCD_HANDLE_DEFAULT_CONFIG();
+
+void init_lcd()
+{
+	lcd_handle.i2c_port = I2C_NUM_0;
+	lcd_handle.address = 0x3F;
+	lcd_handle.columns = 20;
+	lcd_handle.rows = 4;
+	lcd_handle.backlight = LCD_BACKLIGHT_ON;
+
+	lcd_init(&lcd_handle);
+}
+
+//
 
 void init_i2c()
 {
@@ -33,7 +52,10 @@ extern "C" void app_main(void)
 
 	init_i2c();
 	ESP_LOGI(TAG, "I2C inited");
-	PCF8574 comm(I2C_NUM_0);
+
+	init_lcd();
+
+	PCF8574 comm(I2C_NUM_0, 0x3F);
 	ESP_LOGI(TAG, "PCF8574 constr");
 	HD44780<PCF8574> disp(comm, 4, 20);
 	ESP_LOGI(TAG, "HD44780 constr");
