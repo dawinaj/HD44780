@@ -6,4 +6,4 @@ Feel free to suggest or write other Connectors (like for other expanders, or ful
 
 Main source file contains simple tests. You can see the results [here](https://imgur.com/a/MCVgFki).
 
-For C-style library, see [bradkeifer/esp32-HD44780](https://github.com/bradkeifer/esp32-HD44780), on which this library is based.
+For C-style library, see [bradkeifer/esp32-HD44780](https://github.com/bradkeifer/esp32-HD44780), from which this library is sourced.
