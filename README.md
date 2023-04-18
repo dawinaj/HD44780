@@ -9,6 +9,8 @@ Main source file contains simple tests. You can see the results [here](https://i
 For C-style library, see [bradkeifer/esp32-HD44780](https://github.com/bradkeifer/esp32-HD44780), from which this library is sourced.
 
 ## Installation & usage
+See example in `main/main.cpp`.
+
 - Move the files from `main/include/` to your include directory.
 - #include the `HD44780.h` and `PCF8574.h` in your code.
 - Create `PCF8574` object.
