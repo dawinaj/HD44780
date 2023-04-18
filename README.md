@@ -14,4 +14,3 @@ For C-style library, see [bradkeifer/esp32-HD44780](https://github.com/bradkeife
 - Create `PCF8574` object.
 - Create `HD44780<PCF8574>` templated object.
 - Done!
-- 
