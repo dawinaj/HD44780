@@ -10,6 +10,9 @@
 
 #define TAG "HD44780"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-enum-enum-conversion"
+
 template <typename Comm>
 class HD44780
 {
@@ -37,29 +40,50 @@ public:
 
 		backlight = LCD_BACKLIGHT_ON;
 
+		esp_err_t ret = ESP_OK;
+
 		// Reset sequence (Doc Figs 23 & 24)
-		com.write_init(LCD_SET_FUNCTION | LCD_8BIT);
+		ESP_GOTO_ON_ERROR(
+			com.write_init(LCD_SET_FUNCTION | LCD_8BIT),
+			err, TAG, "Error in ::HD44780() with com.write_init() #1");
+
 		vTaskDelay(pdMS_TO_TICKS(8)); // 4.1 ms delay (min)
-		com.write_init(LCD_SET_FUNCTION | LCD_8BIT);
+
+		ESP_GOTO_ON_ERROR(
+			com.write_init(LCD_SET_FUNCTION | LCD_8BIT),
+			err, TAG, "Error in ::HD44780() with com.write_init() #2");
+
 		ets_delay_us(200); // 100 us delay (min)
-		com.write_init(LCD_SET_FUNCTION | LCD_8BIT);
+
+		ESP_GOTO_ON_ERROR(
+			com.write_init(LCD_SET_FUNCTION | LCD_8BIT),
+			err, TAG, "Error in ::HD44780() with com.write_init() #3");
 
 		if (function.mode == LCD_4BIT) // Activate 4-bit mode
 		{
-			com.write_init(LCD_SET_FUNCTION | LCD_4BIT);
+			ESP_GOTO_ON_ERROR(
+				com.write_init(LCD_SET_FUNCTION | LCD_4BIT),
+				err, TAG, "Error in ::HD44780() with com.write_init() #4");
 		}
 
-		// update_function();
-		// update_control();
-		// clear();
-		// update_entry();
-		// home();
-		update_settings();
-		clear();
+		ESP_GOTO_ON_ERROR(
+			update_function(),
+			err, TAG, "Error in ::HD44780() with update_function()");
+		ESP_GOTO_ON_ERROR(
+			update_settings(),
+			err, TAG, "Error in ::HD44780() with update_settings()");
+		ESP_GOTO_ON_ERROR(
+			clear(),
+			err, TAG, "Error in ::HD44780() with clear()");
 
-		//
+		return;
+
+	err:
+		ESP_LOGE(TAG, "Failed to construct! %s", esp_err_to_name(ret));
 	}
-	// HD44780(Comm &c, uint8_t h, uint8_t w, lcd_lines_t l = LCD_2LINE, lcd_dots_t d = LCD_5x8DOTS) : HD44780(c, lcd_dims_t(h, w), l, d) {}
+
+	HD44780(Comm &c, uint8_t h, uint8_t w, lcd_lines_t l = LCD_2LINE, lcd_dots_t d = LCD_5x8DOTS) : HD44780(c, lcd_dims_t(h, w), l, d) {}
+
 	~HD44780() {}
 
 	//
@@ -117,31 +141,53 @@ public:
 		backlight = i;
 	}
 
-	void update_entry()
+	esp_err_t update_entry()
 	{
-		com.write(LCD_SET_ENTRY | entry, backlight);
+		ESP_RETURN_ON_ERROR(
+			com.write(LCD_SET_ENTRY | entry, backlight),
+			TAG, "Error in ::update_entry() with com.write()");
+
+		return ESP_OK;
 	}
-	void update_control()
+	esp_err_t update_control()
 	{
-		com.write(LCD_SET_CONTROL | control, backlight);
+		ESP_RETURN_ON_ERROR(
+			com.write(LCD_SET_CONTROL | control, backlight),
+			TAG, "Error in ::update_control() with com.write()");
+
+		return ESP_OK;
 	}
-	void update_function()
+	esp_err_t update_function()
 	{
-		com.write(LCD_SET_FUNCTION | function, backlight);
+		ESP_RETURN_ON_ERROR(
+			com.write(LCD_SET_FUNCTION | function, backlight),
+			TAG, "Error in ::update_function() with com.write()");
+
+		return ESP_OK;
 	}
-	void update_backlight()
+	esp_err_t update_backlight()
 	{
-		com.write(LCD_DO_NOTHING, backlight);
+		ESP_RETURN_ON_ERROR(
+			com.write(LCD_DO_NOTHING, backlight),
+			TAG, "Error in ::update_backlight() with com.write()");
+
+		return ESP_OK;
 	}
 
-	void update_settings()
+	esp_err_t update_settings()
 	{
-		update_function();
-		update_entry();
-		update_control();
+		ESP_RETURN_ON_ERROR(
+			update_entry(),
+			TAG, "Error in ::update_settings() with update_entry()");
+
+		ESP_RETURN_ON_ERROR(
+			update_control(),
+			TAG, "Error in ::update_settings() with update_control()");
+
+		return ESP_OK;
 	}
 
-	void write_cstr(const char *const cstr, int del_ms = 0, const lcd_str_flags_t &f = {})
+	esp_err_t write_cstr(const char *const cstr, int del_ms = 0, const lcd_str_flags_t &f = {})
 	{
 		const char *ptr = cstr;
 		char c = '\0';
@@ -155,24 +201,35 @@ public:
 				case LCD_NL_IGNORE:
 					break;
 				case LCD_NL_AS_SP:
-					write_char(' ');
+					ESP_RETURN_ON_ERROR(
+						write_char(' '),
+						TAG, "Error in ::write_cstr() with write_char() #1");
 					break;
 				case LCD_NL_AS_LF:
-					move_cursor(cursor_pos + lcd_dims_t(1, 0));
+					ESP_RETURN_ON_ERROR(
+						move_cursor(cursor_pos + lcd_dims_t(1, 0)),
+						TAG, "Error in ::write_cstr() with move_cursor() #1");
 					break;
 				case LCD_NL_AS_CRLF:
-					move_cursor(lcd_dims_t(cursor_pos.y + 1, 0));
+					ESP_RETURN_ON_ERROR(
+						move_cursor(lcd_dims_t(cursor_pos.y + 1, 0)),
+						TAG, "Error in ::write_cstr() with move_cursor() #2");
 					break;
 				}
 				break;
 			case '\t':
 				do
 				{
-					write_char(' ');
-				} while (cursor_pos.x % f.tb_to_sp);
+					ESP_RETURN_ON_ERROR(
+						write_char(' '),
+						TAG, "Error in ::write_cstr() with write_char() #2");
+				} // f off
+				while (cursor_pos.x % f.tb_to_sp);
 				break;
 			default:
-				write_char(c);
+				ESP_RETURN_ON_ERROR(
+					write_char(c),
+					TAG, "Error in ::write_cstr() with write_char() #3");
 				break;
 			}
 
@@ -180,60 +237,102 @@ public:
 			if (del_ms)
 				vTaskDelay(pdMS_TO_TICKS(del_ms));
 		}
+
+		return ESP_OK;
 	}
-	void write_bffr(const char *const cstr, size_t len, int del_ms = 0)
+	esp_err_t write_bffr(const char *const cstr, size_t len, int del_ms = 0)
 	{
 		const char *ptr = cstr;
 		const char *ptrend = ptr + len;
 		while (ptr < ptrend)
 		{
-			write_char(*ptr++);
+			ESP_RETURN_ON_ERROR(
+				write_char(*ptr++),
+				TAG, "Error in ::write_bffr() with write_char()");
+
 			if (del_ms)
 				vTaskDelay(pdMS_TO_TICKS(del_ms));
 		}
+
+		return ESP_OK;
 	}
-	void write_char(char c)
+	esp_err_t write_char(char c)
 	{
-		com.write(c, backlight, true);
+		ESP_RETURN_ON_ERROR(
+			com.write(c, backlight, true),
+			TAG, "Error in ::write_char() with com.write()");
+
 		if (entry.entry == LCD_ENTRY_INCREMENT)
-			increment_internal_cursor();
+			ESP_RETURN_ON_ERROR(
+				increment_internal_cursor(),
+				TAG, "Error in ::write_char() with increment_internal_cursor()");
 		else
-			decrement_internal_cursor();
+			ESP_RETURN_ON_ERROR(
+				decrement_internal_cursor(),
+				TAG, "Error in ::write_char() with decrement_internal_cursor()");
+
+		return ESP_OK;
 	}
 
-	void write_cgram(size_t loc, const lcd_symbol_t &sym)
+	esp_err_t write_cgram(size_t loc, const lcd_symbol_t &sym)
 	{
 		loc &= 0x7; // we only have 8 slots (or 4 with 5x10, then lowest bit is ignored)
 		size_t len = (function.dots == LCD_5x10DOTS) ? 10 : 8;
 
-		com.write(LCD_SET_CGR_ADDR | (loc << 3), backlight);
+		ESP_RETURN_ON_ERROR(
+			com.write(LCD_SET_CGR_ADDR | (loc << 3), backlight),
+			TAG, "Error in ::write_cgram() with com.write() #1");
 
 		for (size_t i = 0; i < len; ++i)
-			com.write(sym[i], backlight, true);
+			ESP_RETURN_ON_ERROR(
+				com.write(sym[i], backlight, true),
+				TAG, "Error in ::write_cgram() with com.write() #2");
 
-		move_cursor(0, 0);
+		ESP_RETURN_ON_ERROR(
+			move_cursor(0, 0),
+			TAG, "Error in ::write_cgram() with move_cursor()");
+
+		return ESP_OK;
 	}
 
-	void clear()
+	esp_err_t clear()
 	{
-		com.write(LCD_CLEAR_DISPLAY, backlight);
+		ESP_RETURN_ON_ERROR(
+			com.write(LCD_CLEAR_DISPLAY, backlight),
+			TAG, "Error in ::clear() with com.write()");
+
 		cursor_pos = {0, 0};
 		entry.entry = LCD_ENTRY_INCREMENT; // Also sets I/D bit to 1 (increment mode)
+
+		return ESP_OK;
 	}
-	void home()
+	esp_err_t home()
 	{
-		com.write(LCD_CURSOR_HOME, backlight);
+		ESP_RETURN_ON_ERROR(
+			com.write(LCD_CURSOR_HOME, backlight),
+			TAG, "Error in ::home() with com.write()");
+
 		vTaskDelay(pdMS_TO_TICKS(2)); // 1.52ms execution time
 		cursor_pos = {0, 0};
+
+		return ESP_OK;
 	}
 
-	void disp_shift_left()
+	esp_err_t disp_shift_left()
 	{
-		com.write_byte(LCD_SET_MODE | LCD_DISPLAY_MOVE | LCD_MOVE_LEFT, backlight);
+		ESP_RETURN_ON_ERROR(
+			com.write_byte(LCD_SET_MODE | LCD_DISPLAY_MOVE | LCD_MOVE_LEFT, backlight),
+			TAG, "Error in ::disp_shift_left() with com.write()");
+
+		return ESP_OK;
 	}
-	void disp_shift_right()
+	esp_err_t disp_shift_right()
 	{
-		com.write_byte(LCD_SET_MODE | LCD_DISPLAY_MOVE | LCD_MOVE_RIGHT, backlight);
+		ESP_RETURN_ON_ERROR(
+			com.write_byte(LCD_SET_MODE | LCD_DISPLAY_MOVE | LCD_MOVE_RIGHT, backlight),
+			TAG, "Error in ::disp_shift_right() with com.write()");
+
+		return ESP_OK;
 	}
 
 	lcd_dims_t get_cursor()
@@ -241,7 +340,7 @@ public:
 		return cursor_pos;
 	}
 
-	void move_cursor(lcd_dims_t p)
+	esp_err_t move_cursor(lcd_dims_t p)
 	{
 		constexpr uint8_t row_offsets[] = {0x00, 0x40, 0x14, 0x54, 0x28, 0x68}; // 3rd line is a stretch, but it makes sense. 4th would not fit anymore
 
@@ -249,15 +348,19 @@ public:
 
 		uint8_t idx = row_offsets[cursor_pos.y] + cursor_pos.x;
 
-		com.write(LCD_SET_DDR_ADDR | idx, backlight);
+		ESP_RETURN_ON_ERROR(
+			com.write(LCD_SET_DDR_ADDR | idx, backlight),
+			TAG, "Error in ::move_cursor() with com.write()");
+
+		return ESP_OK;
 	}
-	void move_cursor(uint8_t y, uint8_t x)
+	esp_err_t move_cursor(uint8_t y, uint8_t x)
 	{
-		move_cursor(lcd_dims_t(y, x));
+		return move_cursor(lcd_dims_t(y, x));
 	}
 
 private:
-	void increment_internal_cursor()
+	esp_err_t increment_internal_cursor()
 	{
 		cursor_pos.x++;
 
@@ -268,11 +371,15 @@ private:
 			if (cursor_pos.y >= screen_size.y)
 				cursor_pos.y = 0;
 
-			move_cursor(cursor_pos);
+			ESP_RETURN_ON_ERROR(
+				move_cursor(cursor_pos),
+				TAG, "Error in ::increment_internal_cursor() with move_cursor()");
 		}
 		log_cursor();
+
+		return ESP_OK;
 	}
-	void decrement_internal_cursor()
+	esp_err_t decrement_internal_cursor()
 	{
 		cursor_pos.x--;
 
@@ -283,9 +390,13 @@ private:
 			if (cursor_pos.y >= screen_size.y)
 				cursor_pos.y = screen_size.y - 1;
 
-			move_cursor(cursor_pos);
+			ESP_RETURN_ON_ERROR(
+				move_cursor(cursor_pos),
+				TAG, "Error in ::decrement_internal_cursor() with move_cursor()");
 		}
 		log_cursor();
+
+		return ESP_OK;
 	}
 
 	void log_cursor()
@@ -293,5 +404,7 @@ private:
 		ESP_LOGD(TAG, "Cursor is at: %d, %d", cursor_pos.y, cursor_pos.x);
 	}
 };
+
+#pragma GCC diagnostic pop
 
 #undef TAG

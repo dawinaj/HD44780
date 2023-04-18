@@ -1,10 +1,5 @@
 #pragma once
 
-
-
-
-
-
 // https://www.sparkfun.com/datasheets/LCD/HD44780.pdf - datasheet
 
 enum lcd_command_t : uint8_t
@@ -102,16 +97,6 @@ struct display_control_t
 	}
 };
 
-struct display_mode_t
-{
-	lcd_move_t move;
-	lcd_dir_t direction;
-	operator uint8_t() const
-	{
-		return static_cast<uint8_t>(move) | static_cast<uint8_t>(direction);
-	}
-};
-
 struct display_function_t
 {
 	lcd_mode_t mode;
@@ -122,7 +107,6 @@ struct display_function_t
 		return static_cast<uint8_t>(mode) | static_cast<uint8_t>(lines) | static_cast<uint8_t>(dots);
 	}
 };
-
 
 // display shift {
 enum lcd_move_t : uint8_t
