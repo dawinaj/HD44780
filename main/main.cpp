@@ -53,14 +53,16 @@ extern "C" void app_main(void)
 	init_i2c();
 	ESP_LOGI(TAG, "I2C inited");
 
-	init_lcd();
-
 	PCF8574 comm(I2C_NUM_0, 0x3F);
 	ESP_LOGI(TAG, "PCF8574 constr");
 	HD44780<PCF8574> disp(comm, 4, 20);
 	ESP_LOGI(TAG, "HD44780 constr");
 
-	disp.write_string("Now thats a pretty really longass string no cap fr");
+	// init_lcd();
+	// vTaskDelay(pdMS_TO_TICKS(1000));
+
+	// disp.write_char('A');
+	disp.write_string("Now thats a pretty really longass string no cap fr, now let it overwrite itself lmao ongod", 20);
 
 	ESP_LOGI(TAG, "Written");
 }

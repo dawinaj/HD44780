@@ -44,25 +44,23 @@ public:
 		return LCD_4BIT;
 	}
 
-	void write(bool RS, bool BL, uint8_t data)
+	void write(uint8_t data, bool BL, bool RS = false)
 	{
-		uint8_t mode = (RS) | (BL ? LCD_BACKLIGHT_ON : LCD_BACKLIGHT_OFF);
+		uint8_t mode = (RS ? LCD_REG_PIN_DATA : LCD_REG_PIN_CMND) | (BL ? LCD_BL_PIN_ON : LCD_BL_PIN_OFF);
 
-		uint8_t datah = data;
-		uint8_t datal = data << 4;
+		uint8_t datah = data & 0xF0;
+		uint8_t datal = (data << 4) & 0xF0;
 
 		write_nibble(datah | mode);
 		write_nibble(datal | mode);
 
-		//ets_delay_us(40); // 37us + 4us execution time
+		// ets_delay_us(40); // 37us + 4us execution time
 	}
 
 private:
 	// writes and clocks-in the data
 	void write_nibble(uint8_t data)
 	{
-		data = data & 0xF0;
-
 		send_i2c(data, false);
 		ets_delay_us(1000); // to stabilize pins (why so long gdammit)
 
@@ -78,6 +76,8 @@ private:
 		esp_err_t ret = ESP_OK;
 		i2c_cmd_handle_t cmdh = i2c_cmd_link_create();
 
+		uint8_t mode = (CE ? LCD_CLK_PIN_EN : LCD_CLK_PIN_DIS);
+
 		ESP_GOTO_ON_ERROR(
 			i2c_master_start(cmdh),
 			err, TAG, "Error with i2c_master_start()");
@@ -87,7 +87,7 @@ private:
 			err, TAG, "Error with i2c_master_write_byte() #1");
 
 		ESP_GOTO_ON_ERROR(
-			i2c_master_write_byte(cmdh, data, true),
+			i2c_master_write_byte(cmdh, data | mode, true),
 			err, TAG, "Error with i2c_master_write_byte() #2");
 
 		ESP_GOTO_ON_ERROR(

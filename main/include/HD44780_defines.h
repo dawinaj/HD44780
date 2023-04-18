@@ -18,20 +18,30 @@
 // RW - not used (only write)
 // E - used internally for clocking data in
 
-struct lcd_config_t
-{
-	uint8_t columns;		  /*!< Number of columns. Must be populated prior to calling lcd_init(). */
-	uint8_t rows;			  /*!< Number of rows. Must be populated prior to calling lcd_init(). */
-	uint8_t display_function; /*!< Current state of display function flag. Must be populated prior to calling lcd_init(). */
-	uint8_t display_control;  /*!< Current state of display control flag. Must be populated prior to calling lcd_init(). */
-	uint8_t display_mode;	  /*!< Current state of display mode flag. Must be populated prior to calling lcd_init(). */
-	uint8_t backlight;		  /*!< Current state of backlight. */
-};
-
 struct lcd_dims_t
 {
 	uint8_t y;
 	uint8_t x;
+};
+
+enum lcd_reg_pin_t : uint8_t // RS pin
+{
+	LCD_REG_PIN_CMND = 0b00000000, // write command to internals
+	LCD_REG_PIN_DATA = 0b00000001, // write data to DDR/CGR
+};
+
+enum lcd_clk_pin_t : uint8_t // CE pin
+{
+	LCD_CLK_PIN_DIS = 0b00000000, // clock disable
+	LCD_CLK_PIN_EN = 0b00000100,  // clock enable
+
+};
+
+enum lcd_bl_pin_t : uint8_t // BL pin
+{
+	LCD_BL_PIN_OFF = 0b00000000, // backlight off
+	LCD_BL_PIN_ON = 0b00001000,	 // backlight on
+
 };
 
 enum lcd_command_t : uint8_t

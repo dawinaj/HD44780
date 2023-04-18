@@ -2,6 +2,8 @@
 
 #include "HD44780_defines.h"
 
+#define TAG "HD44780"
+
 template <typename Comm>
 class HD44780
 {
@@ -12,7 +14,8 @@ public:
 	display_control_t control;
 	// display_mode_t mode;
 	display_function_t function;
-	lcd_backlight_t backlight;
+	bool backlight;
+
 	const lcd_dims_t screen_size;
 
 private:
@@ -37,7 +40,7 @@ public:
 		entry.shift = LCD_DISPLAY_NOSHIFT;
 		update_entry();
 
-		backlight = LCD_BACKLIGHT_ON;
+		backlight = true;
 		home();
 	}
 	HD44780(Comm &c, uint8_t h, uint8_t w) : HD44780(c, lcd_dims_t(h, w)) {}
@@ -112,23 +115,23 @@ public:
 
 	void update_entry()
 	{
-		com.write(0, backlight, LCD_SET_ENTRY | entry);
+		com.write(LCD_SET_ENTRY | entry, backlight);
 	}
 	void update_control()
 	{
-		com.write(0, backlight, LCD_SET_CONTROL | control);
+		com.write(LCD_SET_CONTROL | control, backlight);
 	}
 	// void update_mode()
 	// {
-	// 	com.write(0, backlight, LCD_SET_MODE | mode);
+	// 	com.write(LCD_SET_MODE | mode, backlight);
 	// }
 	void update_function()
 	{
-		com.write(0, backlight, LCD_SET_FUNCTION | function);
+		com.write(LCD_SET_FUNCTION | function, backlight);
 	}
 	void update_backlight()
 	{
-		com.write(0, backlight, LCD_DO_NOTHING);
+		com.write(LCD_DO_NOTHING, backlight);
 	}
 
 	void update_settings()
@@ -139,15 +142,19 @@ public:
 		update_function();
 	}
 
-	void write_string(const char *const str)
+	void write_string(const char *const str, int del_ms)
 	{
 		const char *ptr = str;
 		while (*ptr) // automatically stops when null
+		{
 			write_char(*ptr++);
+			if (del_ms)
+				vTaskDelay(pdMS_TO_TICKS(del_ms));
+		}
 	}
 	void write_char(char c)
 	{
-		com.write(true, backlight, c);
+		com.write(c, backlight, true);
 		if (entry.entry == LCD_ENTRY_INCREMENT)
 			increment_internal_cursor();
 		else
@@ -156,14 +163,14 @@ public:
 
 	void clear()
 	{
-		com.write(false, backlight, LCD_CLEAR_DISPLAY);
+		com.write(LCD_CLEAR_DISPLAY, backlight);
 		cursor_pos = {0, 0};
 		entry.entry = LCD_ENTRY_INCREMENT; // Also sets I/D bit to 1 (increment mode)
 	}
 
 	void home()
 	{
-		com.write(false, backlight, LCD_CURSOR_HOME);
+		com.write(LCD_CURSOR_HOME, backlight);
 		vTaskDelay(pdMS_TO_TICKS(2)); // 1.52ms execution time
 		cursor_pos = {0, 0};
 	}
@@ -178,7 +185,7 @@ public:
 
 		uint8_t idx = row_offsets[p.y] + p.x;
 
-		com.write(false, backlight, LCD_SET_DDR_ADDR | idx);
+		com.write(LCD_SET_DDR_ADDR | idx, backlight);
 	}
 	void move_cursor(uint8_t y, uint8_t x)
 	{
@@ -199,6 +206,7 @@ private:
 
 			move_cursor(cursor_pos);
 		}
+		log_cursor();
 	}
 	void decrement_internal_cursor()
 	{
@@ -213,5 +221,13 @@ private:
 
 			move_cursor(cursor_pos);
 		}
+		log_cursor();
+	}
+
+	void log_cursor()
+	{
+		ESP_LOGI(TAG, "Cursor is at: %d, %d", cursor_pos.y, cursor_pos.x);
 	}
 };
+
+#undef TAG
