@@ -1,48 +1,11 @@
 #pragma once
 
-// http://1.bp.blogspot.com/-3rGvx1WiEHQ/VRJQyqSIqTI/AAAAAAAASAc/Gs9DN97CM8Q/s1600/PCF8574-LCD-HD44780-schemat.png
 
-// Pin mappings
-// P0 -> RS
-// P1 -> RW
-// P2 -> E
-// P3 -> Backlight
-// P4 -> D4
-// P5 -> D5
-// P6 -> D6
-// P7 -> D7
 
-// https://en.wikipedia.org/wiki/Hitachi_HD44780_LCD_controller
 
-// RS - only used wor writing characters, otherwise 0
-// RW - not used (only write)
-// E - used internally for clocking data in
 
-struct lcd_dims_t
-{
-	uint8_t y;
-	uint8_t x;
-};
 
-enum lcd_reg_pin_t : uint8_t // RS pin
-{
-	LCD_REG_PIN_CMND = 0b00000000, // write command to internals
-	LCD_REG_PIN_DATA = 0b00000001, // write data to DDR/CGR
-};
-
-enum lcd_clk_pin_t : uint8_t // CE pin
-{
-	LCD_CLK_PIN_DIS = 0b00000000, // clock disable
-	LCD_CLK_PIN_EN = 0b00000100,  // clock enable
-
-};
-
-enum lcd_bl_pin_t : uint8_t // BL pin
-{
-	LCD_BL_PIN_OFF = 0b00000000, // backlight off
-	LCD_BL_PIN_ON = 0b00001000,	 // backlight on
-
-};
+// https://www.sparkfun.com/datasheets/LCD/HD44780.pdf - datasheet
 
 enum lcd_command_t : uint8_t
 {
@@ -126,10 +89,10 @@ enum lcd_dots_t : uint8_t
 };
 // }
 
-enum lcd_backlight_t : uint8_t
+enum lcd_backlight_t : bool
 {
-	LCD_BACKLIGHT_OFF = 0b00000000,
-	LCD_BACKLIGHT_ON = 0b00001000, // 1 << 3
+	LCD_BACKLIGHT_OFF = false,
+	LCD_BACKLIGHT_ON = true,
 };
 
 struct display_entry_t
@@ -138,7 +101,7 @@ struct display_entry_t
 	lcd_shift_t shift;
 	operator uint8_t() const
 	{
-		return entry | shift;
+		return static_cast<uint8_t>(entry) | static_cast<uint8_t>(shift);
 	}
 };
 
@@ -149,7 +112,7 @@ struct display_control_t
 	lcd_blink_t blink;
 	operator uint8_t() const
 	{
-		return display | cursor | blink;
+		return static_cast<uint8_t>(display) | static_cast<uint8_t>(cursor) | static_cast<uint8_t>(blink);
 	}
 };
 
@@ -159,7 +122,7 @@ struct display_mode_t
 	lcd_dir_t direction;
 	operator uint8_t() const
 	{
-		return move | direction;
+		return static_cast<uint8_t>(move) | static_cast<uint8_t>(direction);
 	}
 };
 
@@ -170,6 +133,7 @@ struct display_function_t
 	lcd_dots_t dots;
 	operator uint8_t() const
 	{
-		return mode | lines | dots;
+		return static_cast<uint8_t>(mode) | static_cast<uint8_t>(lines) | static_cast<uint8_t>(dots);
 	}
 };
+

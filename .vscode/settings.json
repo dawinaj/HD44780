@@ -22,7 +22,12 @@
 		"string": "cpp",
 		"string_view": "cpp",
 		"functional": "cpp",
-		"ostream": "cpp"
+		"ostream": "cpp",
+		"deque": "cpp",
+		"list": "cpp",
+		"unordered_map": "cpp",
+		"vector": "cpp",
+		"system_error": "cpp"
 	},
 	"idf.flashType": "UART"
 }
