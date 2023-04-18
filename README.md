@@ -1,4 +1,4 @@
-# ESP32 HD44780 driver
+# ESP32 HD44780 driver/library
 
 This is a header-only C++ style library (see files in `main/include/`) for driving the popular **HD447870** LCD display from an **ESP32** microcontroller.
 Currently, there exists one Connector - using **PCF8574** 8-bit expander via **I2C**.
