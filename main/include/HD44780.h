@@ -227,6 +227,15 @@ public:
 		cursor_pos = {0, 0};
 	}
 
+	void disp_shift_left()
+	{
+		com.write_byte(LCD_SET_MODE | LCD_DISPLAY_MOVE | LCD_MOVE_LEFT, backlight);
+	}
+	void disp_shift_right()
+	{
+		com.write_byte(LCD_SET_MODE | LCD_DISPLAY_MOVE | LCD_MOVE_RIGHT, backlight);
+	}
+
 	lcd_dims_t get_cursor()
 	{
 		return cursor_pos;

@@ -55,20 +55,6 @@ enum lcd_blink_t : uint8_t
 };
 // }
 
-// display shift {
-enum lcd_move_t : uint8_t
-{
-	LCD_CURSOR_MOVE = 0b00000000,  // Move Cursor
-	LCD_DISPLAY_MOVE = 0b00001000, // Move Display
-};
-
-enum lcd_dir_t : uint8_t
-{
-	LCD_MOVE_LEFT = 0b00000000,	 // Shift Left
-	LCD_MOVE_RIGHT = 0b00000100, // Shift Right
-};
-// }
-
 // display function {
 enum lcd_mode_t : uint8_t
 {
@@ -137,3 +123,17 @@ struct display_function_t
 	}
 };
 
+
+// display shift {
+enum lcd_move_t : uint8_t
+{
+	LCD_CURSOR_MOVE = 0b00000000,  // Move Cursor
+	LCD_DISPLAY_MOVE = 0b00001000, // Move Display
+};
+
+enum lcd_dir_t : uint8_t
+{
+	LCD_MOVE_LEFT = 0b00000000,	 // Shift Left
+	LCD_MOVE_RIGHT = 0b00000100, // Shift Right
+};
+// }
