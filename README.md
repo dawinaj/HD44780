@@ -12,6 +12,7 @@ For C-style library, see [bradkeifer/esp32-HD44780](https://github.com/bradkeife
 See example in `main/main.cpp`.
 
 - Move the files from `main/include/` to your include directory.
+- Add `driver` to your `idf_component_register` `REQUIRES`.
 - #include the `HD44780.h` and `PCF8574.h` in your code.
 - Create `PCF8574` object.
 - Create `HD44780<PCF8574>` templated object.
