@@ -13,8 +13,6 @@
 
 #include "HD44780/HD44780.h"
 
-#include "bitwise_print.h"
-
 #define HD44780_PCF8574_I2C_OPTIMIZE_WRITE
 
 // Class for handling connection to the expander
@@ -46,14 +44,14 @@ class HD44780_PCF8574 : public HD44780_Iface
 		LCD_BL_PIN_ON = 0b00001000,	 // backlight on
 	};
 
-	i2c_master_bus_handle_t i2c_host;
+	i2c_master_bus_handle_t &i2c_host;
 	uint16_t address;
 	uint32_t clk_hz;
 	i2c_master_dev_handle_t i2c_hdl = nullptr;
 	bool BL = false;
 
 public:
-	HD44780_PCF8574(i2c_master_bus_handle_t ih, uint16_t a = 0b111, uint32_t chz = 400'000) : i2c_host(ih), address((a & 0b111) | 0b0111000), clk_hz(chz) //
+	HD44780_PCF8574(i2c_master_bus_handle_t &ih, uint16_t a = 0b111, uint32_t chz = 400'000) : i2c_host(ih), address((a & 0b111) | 0b0111000), clk_hz(chz) //
 	{
 		ESP_LOGI(TAG, "Constructed with address: %d", address); // port: %d, , ih
 	}
